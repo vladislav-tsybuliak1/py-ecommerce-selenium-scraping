@@ -1,6 +1,7 @@
 import csv
 from dataclasses import dataclass, fields, astuple
 from enum import Enum
+from time import sleep
 from urllib.parse import urljoin
 
 from bs4 import BeautifulSoup, Tag
@@ -25,10 +26,10 @@ HOME_URL = urljoin(BASE_URL, "test-sites/e-commerce/more/")
 class URLS(Enum):
     HOME = HOME_URL
     COMPUTERS = urljoin(HOME_URL, "computers/")
-    LAPTOPS = urljoin(HOME_URL, "computers/laptops/")
-    TABLETS = urljoin(HOME_URL, "computers/tablets/")
+    LAPTOPS = urljoin(HOME_URL, "computers/laptops")
+    TABLETS = urljoin(HOME_URL, "computers/tablets")
     PHONES = urljoin(HOME_URL, "phones/")
-    TOUCH = urljoin(HOME_URL, "phones/touch/")
+    TOUCH = urljoin(HOME_URL, "phones/touch")
 
 
 @dataclass
@@ -58,7 +59,7 @@ def get_single_product(soup: Tag) -> Product:
         title=soup.select_one(".title")["title"],
         description=soup.select_one(".description").text,
         price=float(soup.select_one(".price").text.replace("$", "")),
-        rating=int(soup.select_one("p[data-rating]")["data-rating"]),
+        rating=len(soup.select(".ws-icon-star")),
         num_of_reviews=int(soup.select_one(".review-count").text.split()[0])
     )
 
@@ -68,12 +69,9 @@ def get_products(driver: webdriver.Chrome, url: str) -> list[Product]:
 
     try:
         while True:
-            button = WebDriverWait(driver, 2).until(
-                ec.element_to_be_clickable(
-                    (By.CLASS_NAME, "ecomerce-items-scroll-more"))
-            )
+            sleep(2)
+            button = driver.find_element(By.CLASS_NAME, "ecomerce-items-scroll-more")
             button.click()
-
             WebDriverWait(driver, 2).until(
                 ec.presence_of_all_elements_located(
                     (By.CLASS_NAME, "card-body"))
